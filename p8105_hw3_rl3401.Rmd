@@ -8,6 +8,8 @@ output: github_document
 library(tidyverse)
 ```
 
+
+
 ##problem 2
 
 ```{r}
@@ -71,4 +73,120 @@ brfss_df |>
 
 ## problem 3
 
+```{r}
+accel_df = read_csv("data/nhanes_accel.csv")|>
+  janitor::clean_names()
 
+covar_df = read_csv("data/nhanes_covar.csv",skip = 4)|>
+  janitor::clean_names()
+```
+
+```{r}
+baseline_df =
+covar_df |>
+  drop_na()|>
+  filter(age >= 21)|>
+  mutate(
+      sex = case_match(
+      sex,
+      1 ~ "male",
+      2 ~ "female"),
+      education = case_match(
+        education,
+        1 ~ "less than high school",
+        2 ~ "high school equivalent",
+        3 ~ "more than high school"
+      ))|>
+  mutate(education = fct_relevel(education, "less than high school", "high school equivalent", "more than high school"))
+```
+Produce a reader-friendly table for the number of men and women in each education category
+```{r}
+baseline_df |>
+  group_by(sex,education)|>
+  summarize(n_obs=n())|>
+  pivot_wider(
+    names_from = education,
+    values_from = n_obs
+  )|>
+  knitr::kable()
+```
+
+and create a visualization of the age distributions for men and women in each education category. Comment on these items.
+
+```{r}
+baseline_df|>
+  ggplot(aes(x=age,color=sex))+
+  geom_density()+
+  facet_grid(.~education)
+```
+
+```{r}
+total_activity_df = accel_df|>
+  pivot_longer(
+    cols = starts_with("min"),
+               names_to = "time",
+               values_to = "accel")|>
+  group_by(seqn)|>
+  summarize(total_activity=sum(accel))
+```
+
+```{r}
+total_activity_plot_df = inner_join(baseline_df,total_activity_df,by="seqn") 
+total_activity_plot_df|>
+  ggplot(aes(x=age,y=total_activity,color=sex))+
+  facet_grid(.~education)+
+  geom_point()+
+  geom_smooth()
+```
+
+
+```{r}
+hour_df = accel_df|>
+   pivot_longer(
+    cols = starts_with("min"),
+               names_to = "time",
+               values_to = "accel")|>
+   mutate(hour = case_when(
+    time %in% paste0("min", 1:60) ~ "hour1",
+    time %in% paste0("min", 61:120) ~ "hour2",
+    time %in% paste0("min", 121:180) ~ "hour3",
+    time %in% paste0("min", 181:240) ~ "hour4",
+    time %in% paste0("min", 241:300) ~ "hour5",
+    time %in% paste0("min", 301:360) ~ "hour6",
+    time %in% paste0("min", 361:420) ~ "hour7",
+    time %in% paste0("min", 421:480) ~ "hour8",
+    time %in% paste0("min", 481:540) ~ "hour9",
+    time %in% paste0("min", 541:600) ~ "hour10",
+    time %in% paste0("min", 601:660) ~ "hour11",
+    time %in% paste0("min", 661:720) ~ "hour12",
+    time %in% paste0("min", 721:780) ~ "hour13",
+    time %in% paste0("min", 781:840) ~ "hour14",
+    time %in% paste0("min", 841:900) ~ "hour15",
+    time %in% paste0("min", 901:960) ~ "hour16",
+    time %in% paste0("min", 961:1020) ~ "hour17",
+    time %in% paste0("min", 1021:1080) ~ "hour18",
+    time %in% paste0("min", 1081:1140) ~ "hour19",
+    time %in% paste0("min", 1141:1200) ~ "hour20",
+    time %in% paste0("min", 1201:1260) ~ "hour21",
+    time %in% paste0("min", 1261:1320) ~ "hour22",
+    time %in% paste0("min", 1321:1380) ~ "hour23",
+    time %in% paste0("min", 1381:1440) ~ "hour24",
+    TRUE ~ as.character(time)
+  )
+   ) |>
+    group_by(seqn,hour)|>
+  summarize(hour_total=sum(accel))
+
+hour_plot_df = inner_join(baseline_df, hour_df, by = "seqn")
+
+
+hour_plot_df |>
+ggplot( aes(x = hour, y = hour_total, color = sex)) +
+  geom_line(aes(group = seqn), alpha = 0.5)   +
+  geom_smooth() +
+  facet_grid(.~education)+
+  labs(title = "24-hour activity time courses by education level",
+       x = "Hour",
+       y = "Activity Level",
+       color = "Sex") 
+```
