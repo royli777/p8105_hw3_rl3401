@@ -68,4 +68,7 @@ brfss_df |>
   geom_density(alpha = 0.5) +
   labs(x = "Data Value", y = "Count", title = "Distribution of Data Value by Year in NY State") 
 ```
+
 ## problem 3
+
+
