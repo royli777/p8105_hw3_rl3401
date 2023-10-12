@@ -132,28 +132,24 @@ Construct a dataset that is limited to Excellent responses, and contains, year, 
   labs(x = "Year", y = "Average of the data value", title = "“spaghetti” plot of this average value over time within a state ")
 ```
 
-*This is a “spaghetti” plot of this average value over time within a state limited to Excellent responses. At a glance, there appears to be a consistent trend across states. However, due to the sheer number of overlapping lines representing each state, distinguishing between them becomes challenging. This density impedes a clear and definitive interpretation of the data.*
+*This is a “spaghetti” plot of this average value over time within a state limited to Excellent responses. At a glance, there appears to be a consistent trend across states.*
+
+*However, due to the sheer number of overlapping lines representing each state, distinguishing between them becomes challenging. This density impedes a clear and definitive interpretation of the data.*
 
 Make a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY state:
 
 ```{r}
 brfss_df |>
   filter(locationabbr == "NY", year %in% c(2006,2010))|>
-  ggplot(aes(x = response, y =  data_value)) +
+  ggplot(aes(x = response, y =  data_value,fill=response)) +
   facet_grid(.~ year) +
-  geom_boxplot()
+  geom_boxplot()+
+  labs(x = "Response", y = "Data Value", title = "Distribution of Data Value by Year in NY State") 
 ```
 
-or:
+*This is a two-panel plot showing, for the years 2006, and 2010, distribution of data_value for responses (“Poor” to “Excellent”) among locations in NY state. *
 
-```{r}
-brfss_df |>
-  filter(locationabbr == "NY", year %in% c(2006,2010))|>
-  ggplot(aes(x =  data_value, color = response)) +
-  geom_density(alpha = 0.5) +
-  facet_grid(.~ year) +
-  labs(x = "Data Value", y = "Density", title = "Distribution of Data Value by Year in NY State") 
-```
+*For both years, the median ranking is as follows: 'Very good' holds the highest median, followed by 'Good', 'Excellent', 'Fair', and then 'Poor'.the distribution in the 'Very good' category is left-skewed,  the distribution in the 'Excellent' category is right-skewed.*
 
 ## problem 3
 
