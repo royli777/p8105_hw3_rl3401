@@ -6,8 +6,15 @@ output: github_document
 ---
 ```{r}
 library(tidyverse)
-```
 
+knitr::opts_chunk$set(
+	echo = TRUE,
+	warning = FALSE,
+  fig.width = 6,
+  fig.asp = .6,
+  out.width = "90%"
+)
+```
 
 ## Problem 1
 
@@ -160,8 +167,8 @@ accel_df = read_csv("data/nhanes_accel.csv")|>
   janitor::clean_names()|>
    pivot_longer(
     cols = starts_with("min"),
-               names_to = "time",
-               values_to = "accel")
+               names_to = "Minute",
+               values_to = "MIMS_value")
 
 covar_df = read_csv("data/nhanes_covar.csv",skip = 4)|>
   janitor::clean_names() |>
@@ -178,8 +185,9 @@ covar_df = read_csv("data/nhanes_covar.csv",skip = 4)|>
         2 ~ "high school equivalent",
         3 ~ "more than high school"
       ))|>
-  mutate(education = fct_relevel(education, "less than high school", "high school equivalent", "more than high school"))
+  mutate(education = factor(education, levels=c("less than high school", "high school equivalent", "more than high school")))
 
+final_df = inner_join(covar_df,accel_df,by="seqn")
 ```
 
 Produce a reader-friendly table for the number of men and women in each education category:
@@ -195,6 +203,8 @@ covar_df |>
   knitr::kable()
 ```
 
+*The table indicates that the majority of both males and females have pursued education beyond high school. For females, most of them have more than high school education, followed by those with less than high school, and lastly, those with a high school equivalent. For males, the sequence is: more than high school, high school equivalent, and then less than high school.*
+
 Create a visualization of the age distributions for men and women in each education category. 
 
 ```{r}
@@ -204,13 +214,24 @@ covar_df|>
   facet_grid(.~education)
 ```
 
-*Comment*
+*For individuals with an education level below high school:*
+
+*The density plot shows the maximum density for age of females is within the 60-70 years old range. For males, it is within the 70-80 years range.*
+
+*For those who have completed a high school-equivalent education:*
+
+*The maximum density for age of females is within the 70-80  years old range. For males, it is within the 50-60 years range. years old range.*
+
+*For individuals with an education level beyond high school:*
+
+*The density plot indicates the maximum density for age of both females and males are within the 30-40 years old range.*
 
 ```{r}
 total_activity_df = accel_df|>
   group_by(seqn)|>
-  summarize(total_activity=sum(accel))
+  summarize(total_activity=sum(MIMS_value))
 ```
+
 
 Plot - Total activity over the day:
 
@@ -227,18 +248,22 @@ total_activity_plot_df|>
        color = "Sex") 
 ```
 
-*comment*
+*From the chart:*
+
+*For those with an education level of less than high school, both males and females exhibit a pattern where total activity peaks at age 20, declines thereafter, rises again post 50, and starts declining after 60.*
+
+*For individuals with a high school equivalent education, both genders see an increase in activity from age 20 to 40, followed by a decline. After 60, the decline for females becomes more gradual, while for males there's an upswing between 60-70 and then a downturn from 70-80.*
+
+*For those educated beyond high school, males show a mild decline from age 20-50, an increase post 50, and then a sharp drop after 60. Females, on the other hand, begin with a decline, see a surge starting around age 40, and then experience another drop between 40-50.*
+
+*In essence: While males and females within the same education levels display similar trends of rise and fall in activity, their peak times and inflection points differ.*
 
 Plot - 24-hour activity time courses：
 
 ```{r}
-
-hour24_plot_df = inner_join(covar_df, accel_df, by = "seqn")
-
-
-hour24_plot_df |>
-ggplot( aes(x = time, y = accel, color = sex)) +
-  geom_point( alpha = 0.5)   +
+final_df |>
+  ggplot( aes(x = Minute, y = MIMS_value, color = sex)) +
+  geom_point(alpha = 0.3)+
   geom_smooth() +
   facet_grid(.~education)+
   labs(title = "24-hour activity time courses by education level",
@@ -247,4 +272,6 @@ ggplot( aes(x = time, y = accel, color = sex)) +
        color = "Sex") 
 ```
 
-*Describe in words any patterns or conclusions you can make based on this graph*
+*From the observation:*
+
+*In "high school equivalent" group, the 24-hour activity level distribution appears similar for both males and females. In the "less than high school" and "more than high school" groups, females exhibit a higher activity level compared to males. Moreover, all groups demonstrate a trend of rise-fall-rise-fall in their activity levels.*
